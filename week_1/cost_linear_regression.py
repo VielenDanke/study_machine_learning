@@ -35,7 +35,7 @@ print(f"(x^({i}), y^({i})) = ({x_i}, {y_i})")
 # plt.show()
 
 
-# Formula: (1 / (2 * m)) * SUM i = [1..m]((w * x[i] + b) - y[i])^2
+# Formula: (1 / (2 * m)) * SUM i = [0..m-1]((w * x[i] + b) - y[i])^2
 def calculate_cost_function(x_train, y_train, w, b):
     total_sum_error = 0
     m = x_train.shape[0]
