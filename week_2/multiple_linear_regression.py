@@ -12,6 +12,7 @@
 
 import copy
 import math
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -30,7 +31,7 @@ def predict(x, w, b):
       p (scalar):  prediction
     """
     p = np.dot(x, w) + b
-    return p
+    return np.int64(p)
 
 
 def compute_cost(X, y, w, b):
@@ -69,13 +70,13 @@ def compute_gradient(X, y, w, b):
     """
     m, n = X.shape
 
-    dj_dw = np.zeros(n)
+    dj_dw = np.zeros(n, dtype=np.int64)
     dj_db = 0
 
     for i in range(m):
         err = predict(X[i], w, b) - y[i]
         for j in range(n):
-            dj_dw[j] = dj_dw[j] + err * X[i, j]  # access matrix element X[i][j]
+            dj_dw[j] = np.add(dj_dw[j], np.multiply(err, X[i, j]))   # access matrix element X[i][j]
         dj_db = dj_db + err
     dj_dw = dj_dw / m  # we are dividing each value in dj_dw by m, see numpy broadcasting
     dj_db = dj_db / m
@@ -128,24 +129,29 @@ def gradient_descent(X, y, w_in, b_in, cost_function, gradient_function, alpha, 
     return w, b, J_history  # return final w,b and J history for graphing
 
 
-w_init = np.array([0.39133535, 18.75376741, -53.36032453, -26.42131618])
-X_train = np.array([[2104, 5, 1, 45], [1416, 3, 2, 40], [852, 2, 1, 35]])
-y_train = np.array([460, 232, 178])
-# initialize parameters
+# input data
+w_init = np.array([np.float64(0.39133535), np.float64(18.75376741), np.float64(-53.36032453), np.float64(-26.42131618)])
+X_train = np.array([[np.int64(2104), np.int64(5), np.int64(1), np.int64(45)], [np.int64(1416), np.int64(3), np.int64(2), np.int64(40)], [np.int64(852), np.int64(2), np.int64(1), np.int64(35)]])
+y_train = np.array([np.int64(460), np.int64(232), np.int64(178)])
+iterations = 100000
+alpha = 0.00000082
 initial_w = np.zeros_like(w_init)
-initial_b = 0.
+initial_b = 0
+
 # some gradient descent settings
-iterations = 10000
-alpha = 8.0e-7
 # run gradient descent
 w_final, b_final, J_hist = gradient_descent(X_train, y_train, initial_w, initial_b,
                                             compute_cost, compute_gradient,
                                             alpha, iterations)
+
 print(f"b,w found by gradient descent: {b_final:0.2f},{w_final} ")
+
 m, _ = X_train.shape
+
 for i in range(m):
     print(f"prediction: {np.dot(X_train[i], w_final) + b_final:0.2f}, target value: {y_train[i]}")
 
+# draw plot
 fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout=True, figsize=(12, 4))
 ax1.plot(J_hist)
 ax2.plot(100 + np.arange(len(J_hist[100:])), J_hist[100:])
