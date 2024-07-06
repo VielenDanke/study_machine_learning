@@ -16,6 +16,8 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
+from week_2.z_score_normalization import zscore_normalize_features
+
 np.set_printoptions(precision=2)
 
 
@@ -31,7 +33,7 @@ def predict(x, w, b):
       p (scalar):  prediction
     """
     p = np.dot(x, w) + b
-    return np.int64(p)
+    return p
 
 
 def compute_cost(X, y, w, b):
@@ -70,13 +72,13 @@ def compute_gradient(X, y, w, b):
     """
     m, n = X.shape
 
-    dj_dw = np.zeros(n, dtype=np.int64)
+    dj_dw = np.zeros(n)
     dj_db = 0
 
     for i in range(m):
         err = predict(X[i], w, b) - y[i]
         for j in range(n):
-            dj_dw[j] = np.add(dj_dw[j], np.multiply(err, X[i, j]))   # access matrix element X[i][j]
+            dj_dw[j] = dj_dw[j] + err * X[i, j]  # access matrix element X[i][j]
         dj_db = dj_db + err
     dj_dw = dj_dw / m  # we are dividing each value in dj_dw by m, see numpy broadcasting
     dj_db = dj_db / m
@@ -130,26 +132,36 @@ def gradient_descent(X, y, w_in, b_in, cost_function, gradient_function, alpha, 
 
 
 # input data
-w_init = np.array([np.float64(0.39133535), np.float64(18.75376741), np.float64(-53.36032453), np.float64(-26.42131618)])
-X_train = np.array([[np.int64(2104), np.int64(5), np.int64(1), np.int64(45)], [np.int64(1416), np.int64(3), np.int64(2), np.int64(40)], [np.int64(852), np.int64(2), np.int64(1), np.int64(35)]])
-y_train = np.array([np.int64(460), np.int64(232), np.int64(178)])
-iterations = 100000
-alpha = 0.00000082
+w_init = np.array([0.39133535, 18.75376741, -53.36032453, -26.42131618])
+X_train = np.array(
+    [[2104, 5, 1, 45], [1416, 3, 2, 40],
+     [852, 2, 1, 35]]
+)
+y_train = np.array([460, 232, 178])
+iterations = 100
+alpha = 1.0e-1
 initial_w = np.zeros_like(w_init)
 initial_b = 0
 
+# normalize the input using z-score normalization
+X_norm, X_mu, X_sigma = zscore_normalize_features(X_train)
+
+print(f"X non-normalized: {X_train}")
+print(f"X normalized using z-score normalization: {X_norm}")
+
 # some gradient descent settings
 # run gradient descent
-w_final, b_final, J_hist = gradient_descent(X_train, y_train, initial_w, initial_b,
-                                            compute_cost, compute_gradient,
-                                            alpha, iterations)
+w_norm, b_norm, J_hist = gradient_descent(X_norm, y_train, initial_w, initial_b,
+                                          compute_cost, compute_gradient,
+                                          alpha, iterations)
 
-print(f"b,w found by gradient descent: {b_final:0.2f},{w_final} ")
-
-m, _ = X_train.shape
-
-for i in range(m):
-    print(f"prediction: {np.dot(X_train[i], w_final) + b_final:0.2f}, target value: {y_train[i]}")
+# Input
+x_house = np.array([1200, 3, 1, 40])
+# Normalize the input
+x_house_norm = (x_house - X_mu) / X_sigma
+print(x_house_norm)
+x_house_predict = predict(x_house_norm, w_norm, b_norm)
+print(f" predicted price of a house with 1200 sqft, 3 bedrooms, 1 floor, 40 years old = ${x_house_predict:0.0f}")
 
 # draw plot
 fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout=True, figsize=(12, 4))
