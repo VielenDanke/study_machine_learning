@@ -4,6 +4,7 @@ import numpy as np
 import math
 
 from cost_function_logistic_regression import compute_cost_logistic
+from week_2.z_score_normalization import zscore_normalize_features
 from sigmoid import sigmoid
 
 
@@ -75,12 +76,23 @@ def gradient_descent(X, y, w_in, b_in, alpha, num_iters):
     return w, b, J_history  # return final w,b and J history for graphing
 
 
-X_train = np.array([[0.5, 1.5], [1, 1], [1.5, 0.5], [3, 0.5], [2, 2], [1, 2.5]])
+# input data
+X_train = np.array([[1231412, 123], [88888, 10], [1237677, 85], [9999999, 48], [5384213, 99], [123776674, 153]])
 y_train = np.array([0, 0, 0, 1, 1, 1])
 w_tmp = np.zeros_like(X_train[0])
 b_tmp = 0.
 alph = 0.1
 iters = 10000
 
-w_out, b_out, _ = gradient_descent(X_train, y_train, w_tmp, b_tmp, alph, iters)
+# normalize big numbers (feature scaling)
+X_norm, X_mu, X_sigma = zscore_normalize_features(X_train)
+
+w_out, b_out, _ = gradient_descent(X_norm, y_train, w_tmp, b_tmp, alph, iters)
 print(f"\nupdated parameters: w:{w_out}, b:{b_out}")
+
+# predict new parameters
+X_train = np.array([[1231412, 123]])
+
+X_train_norm = (X_train - X_mu) / X_sigma
+
+print(sigmoid(np.dot(X_train_norm, w_out) + b_out))
