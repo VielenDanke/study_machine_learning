@@ -4,7 +4,7 @@ import numpy as np
 import math
 
 from cost_function_logistic_regression import compute_cost_logistic_regression
-from week_2.z_score_normalization import zscore_normalize_features
+from regression_and_classification.week_2.z_score_normalization import zscore_normalize_features
 from sigmoid import sigmoid
 
 

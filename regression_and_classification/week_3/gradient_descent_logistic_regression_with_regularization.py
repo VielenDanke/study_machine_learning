@@ -5,7 +5,7 @@ import numpy as np
 
 from cost_function_logistic_regression import compute_cost_logistic_regression_regularization
 from sigmoid import sigmoid
-from week_2.z_score_normalization import zscore_normalize_features
+from regression_and_classification.week_2.z_score_normalization import zscore_normalize_features
 
 
 def compute_gradient_logistic_reg(X, y, w, b, lambda_):
