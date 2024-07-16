@@ -1,0 +1,52 @@
+import numpy as np
+
+
+def compute_cost(X, y, w, b):
+    """
+    compute cost
+    Args:
+      X (ndarray (m,n)): Data, m examples with n features
+      y (ndarray (m,)) : target values
+      w (ndarray (n,)) : model parameters
+      b (scalar)       : model parameter
+
+    Returns:
+      cost (scalar): cost
+    """
+    m = X.shape[0]
+    cost = 0.0
+    for i in range(m):
+        f_wb_i = np.dot(X[i], w) + b  # (n,)(n,) = scalar (see np.dot)
+        cost = cost + (f_wb_i - y[i]) ** 2  # scalar
+    cost = cost / (2 * m)  # scalar
+    return cost
+
+
+def compute_cost_regularization(X, y, w, b, lambda_):
+    """
+    Computes the cost over all examples
+    Args:
+      X (ndarray (m,n): Data, m examples with n features
+      y (ndarray (m,)): target values
+      w (ndarray (n,)): model parameters
+      b (scalar)      : model parameter
+      lambda_ (scalar): Controls amount of regularization
+    Returns:
+      total_cost (scalar):  cost
+    """
+
+    m = X.shape[0]
+    n = len(w)
+    cost = 0.
+    for i in range(m):
+        f_wb_i = np.dot(X[i], w) + b  # (n,)(n,)=scalar, see np.dot
+        cost = cost + (f_wb_i - y[i]) ** 2  # scalar
+    cost = cost / (2 * m)  # scalar
+
+    reg_cost = 0
+    for j in range(n):
+        reg_cost += (w[j] ** 2)  # scalar
+    reg_cost = (lambda_ / (2 * m)) * reg_cost  # scalar
+
+    total_cost = cost + reg_cost  # scalar
+    return total_cost

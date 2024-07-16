@@ -1,92 +1,45 @@
-# new_w = w - a * (d / d * w) * J(w (vector), b)
-# a - learning rate (between 0 and 1), controls how big is the step we're taking
-# (d / d * w) * J(w, b) - derivative term, which direction we're taking
-# For derivative w - 1 / m SUM (f(x[i]) - y[i]) * x[i][j], where f(x[i]) = w (vector) * x[i] (vector) + b
-#
-# new_b = b - a * (d / d * b) * J(w (vector), b)
-# a - learning rate (between 0 and 1), controls how big is the step we're taking
-# (d / d * b) * J(w, b) - derivative term, which direction we're taking
-# For derivative b - 1 / m SUM (f(x[i]) - y[i]), where f(x[i]) = w (vector) * x[i] (vector) + b
-#
-# Simultaneously update w and b
-
 import copy
 import math
-
 import matplotlib.pyplot as plt
+
 import numpy as np
-
-from week_2.z_score_normalization import zscore_normalize_features
-
-np.set_printoptions(precision=2)
+from z_score_normalization import zscore_normalize_features
+from cost_function_linear_regression import compute_cost_regularization
 
 
-def predict(x, w, b):
-    """
-    single predict using linear regression
-    Args:
-      x (ndarray): Shape (n,) example with multiple features
-      w (ndarray): Shape (n,) model parameters
-      b (scalar):             model parameter
-
-    Returns:
-      p (scalar):  prediction
-    """
-    p = np.dot(x, w) + b
-    return p
-
-
-def compute_cost(X, y, w, b):
-    """
-    compute cost
-    Args:
-      X (ndarray (m,n)): Data, m examples with n features
-      y (ndarray (m,)) : target values
-      w (ndarray (n,)) : model parameters
-      b (scalar)       : model parameter
-
-    Returns:
-      cost (scalar): cost
-    """
-    m = X.shape[0]
-    cost = 0.0
-    for i in range(m):
-        f_wb_i = predict(X[i], w, b)  # (n,)(n,) = scalar (see np.dot)
-        cost = cost + (f_wb_i - y[i]) ** 2  # scalar
-    cost = cost / (2 * m)  # scalar
-    return cost
-
-
-def compute_gradient(X, y, w, b):
+def compute_gradient_linear_reg(X, y, w, b, lambda_):
     """
     Computes the gradient for linear regression
     Args:
-      X (ndarray (m,n)): Data, m examples with n features
-      y (ndarray (m,)) : target values
-      w (ndarray (n,)) : model parameters
-      b (scalar)       : model parameter
+      X (ndarray (m,n): Data, m examples with n features
+      y (ndarray (m,)): target values
+      w (ndarray (n,)): model parameters
+      b (scalar)      : model parameter
+      lambda_ (scalar): Controls amount of regularization
 
     Returns:
       dj_dw (ndarray (n,)): The gradient of the cost w.r.t. the parameters w.
       dj_db (scalar):       The gradient of the cost w.r.t. the parameter b.
     """
-    m, n = X.shape
-
-    dj_dw = np.zeros(n)
-    dj_db = 0
+    m, n = X.shape  # (number of examples, number of features)
+    dj_dw = np.zeros((n,))
+    dj_db = 0.
 
     for i in range(m):
-        err = predict(X[i], w, b) - y[i]
+        err = (np.dot(X[i], w) + b) - y[i]
         for j in range(n):
-            dj_dw[j] = dj_dw[j] + err * X[i, j]  # access matrix element X[i][j]
+            dj_dw[j] = dj_dw[j] + err * X[i, j]
         dj_db = dj_db + err
-    dj_dw = dj_dw / m  # we are dividing each value in dj_dw by m, see numpy broadcasting
+    dj_dw = dj_dw / m
     dj_db = dj_db / m
+
+    for j in range(n):
+        dj_dw[j] = dj_dw[j] + (lambda_ / m) * w[j]
 
     return dj_db, dj_dw
 
 
-def gradient_descent(X, y, w_in, b_in, cost_function, gradient_function, alpha, num_iters):
+def gradient_descent(X, y, w_in, b_in, alpha, lambda_, num_iters):
     """
     Performs batch gradient descent to learn w and b. Updates w and b by taking
     num_iters gradient steps with learning rate alpha
@@ -96,8 +49,6 @@ def gradient_descent(X, y, w_in, b_in, cost_function, gradient_function, alpha, 
       y (ndarray (m,))    : target values
       w_in (ndarray (n,)) : initial model parameters
       b_in (scalar)       : initial model parameter
-      cost_function       : function to compute cost
-      gradient_function   : function to compute the gradient
       alpha (float)       : Learning rate
       num_iters (int)     : number of iterations to run gradient descent
 
@@ -111,18 +62,20 @@ def gradient_descent(X, y, w_in, b_in, cost_function, gradient_function, alpha, 
     w = copy.deepcopy(w_in)  # avoid modifying global w within function
     b = b_in
 
+    m = X.shape[0]
+
     for i in range(num_iters):
 
         # Calculate the gradient and update the parameters
-        dj_db, dj_dw = gradient_function(X, y, w, b)  ##None
+        dj_db, dj_dw = compute_gradient_linear_reg(X, y, w, b, lambda_)  ##None
 
-        # Update Parameters using w, b, alpha and gradient
-        w = w - alpha * dj_dw  ##None
+        # Update Parameters using w, b, alpha and gradient with regularization
+        w = w * (1 - alpha * (lambda_ / m)) - alpha * dj_dw  ##None
         b = b - alpha * dj_db  ##None
 
         # Save cost J at each iteration
         if i < 100000:  # prevent resource exhaustion
-            J_history.append(cost_function(X, y, w, b))
+            J_history.append(compute_cost_regularization(X, y, w, b, lambda_))
 
         # Print cost every at intervals 10 times or as many iterations if < 10
         if i % math.ceil(num_iters / 10) == 0:
@@ -142,6 +95,7 @@ iterations = 100
 alpha = 1.0e-1
 initial_w = np.zeros_like(w_init)
 initial_b = 0
+lambda_ = 0.00001
 
 # normalize the input using z-score normalization
 X_norm, X_mu, X_sigma = zscore_normalize_features(X_train)
@@ -152,15 +106,14 @@ print(f"X normalized using z-score normalization: {X_norm}")
 # some gradient descent settings
 # run gradient descent
 w_norm, b_norm, J_hist = gradient_descent(X_norm, y_train, initial_w, initial_b,
-                                          compute_cost, compute_gradient,
-                                          alpha, iterations)
+                                          alpha, lambda_, iterations)
 
 # Input
 x_house = np.array([1200, 3, 1, 40])
 # Normalize the input
 x_house_norm = (x_house - X_mu) / X_sigma
 print(x_house_norm)
-x_house_predict = predict(x_house_norm, w_norm, b_norm)
+x_house_predict = np.dot(x_house_norm, w_norm) + b_norm
 print(f" predicted price of a house with 1200 sqft, 3 bedrooms, 1 floor, 40 years old = ${x_house_predict:0.0f}")
 
 # draw plot
